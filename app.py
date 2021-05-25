@@ -28,32 +28,13 @@ class Todo(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     description = db.Column(db.String(), nullable = False)
     completed = db.Column(db.Boolean, nullable = False, default=False)
-    list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable = False)
-    ## create a list_id
+
     def __repr__(self):
         return f'<Todo {self.id}{self.description}>'
 
-# db.create_all()
-# db.session.commit()
+db.create_all()
+db.session.commit()
 
-
-# create a todolist class???
-class TodoList(db.Model):
-    __tablename__ = 'todolists'
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.String(), nullable = False)
-    todos = db.relationship('Todo', backref='list',lazy=True)
-
-    def __repr__(self):
-        return f'<Todo {self.id} {self.description}, list{self.list_id}>'
-
-# # when i create a new class, i need 'create_all'
-# db.create_all()
-# db.session.commit()
-
-# present info via index.html
-############################################################################
-##### this route and index is a 'controller' in MCV
 
 # create a route that listen to the html todo_create
 @app.route('/todos/create', methods=['POST'])
@@ -69,13 +50,6 @@ def create_todo():
         description = request.get_json()['description']
         todo = Todo(description=description)
 
-        # list_id?
-        list_id = request.get_json()['list_id']
-
-        ## active_list???
-        active_list = TodoList.query.get(list_id)
-        todo.list = active_list
-
         db.session.add(todo)
         db.session.commit()
         # add body here
@@ -89,7 +63,7 @@ def create_todo():
         db.session.close()
     
     if error:
-        abort(500)
+        abort(400)
     else:
         # do not access "todo" after a session close
         # instead use a body to store "todo" value
@@ -125,15 +99,6 @@ def deleted_todo(todo_id):
         db.session.close()
     
     return jsonify({'success':True})
-
-# another route??
-@app.route('/lists/<list_id>')
-def get_list_todos(list_id):
-    return render_template('index.html',
-    lists=TodoList.query.all(),
-    active_list=TodoList.query.get(list_id),
-    todos=Todo.query.filter_by(list_id=list_id).order_by('id').all()
-    )
 
 
 @app.route('/')
