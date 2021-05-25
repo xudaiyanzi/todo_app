@@ -30,7 +30,7 @@
                 /* float:right; */
             }
 
-            .lists-wrapper{
+            .lists-wrapper, .todos-wrapper{
                 vertical-align: top;
                 border-style: solid;
                 border-width:thin;
@@ -47,36 +47,48 @@
     </head>
     <body>
 
-       <form id="form">
-            <div>
-                <label for="name">Create a to-do item</label>
-                <input type="text" id="description" name="description"/>
-                <input type="submit" id="submit" value="Create"/>
-            </div>
-       </form>
+        <div class="lists-wrapper">
+            <ul id="lists">
+                {% for list in lists %}
+                <li>
+                    <a href="/lists/{{list.id}}">
+                    {{list.name}}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
 
-       <div id = 'error' class = "hidden">Somthing went wrong!</div>
+        <div class="todos-wrapper">
+            <h4>
+                {{active_list.name}}
+            </h4>
 
-       <h4 class="layout-left"> Current todo list: </h4>
+            <form id="form">
+                    <div>
+                        <label for="name">Create a to-do item</label>
+                        <input type="text" id="description" name="description"/>
+                        <input type="submit" id="submit" value="Create"/>
+                    </div>
+            </form>
 
-       <div > 
+            <div id = 'error' class = "hidden">Somthing went wrong!</div>
 
+            <h5 class="layout-left"> Current todo list: </h5>
+        
             <ul id='todos' class="lists-wrapper"> <!--ul means unordered list-->
                 <!--use jinja to bed non-html info in a html file-->
                 {% for d in data %}
                 <li>
-                    <input class="check-completed" data-id="{{d.id}}" type='checkbox' {% if d.completed %} checked {% endif %} /> 
-                    {{d.description}}
-                    <button class="delete-button" data-id="{{d.id}}"> &Cross;</button>
-                
+                <input class="check-completed" data-id="{{d.id}}" type='checkbox' {% if d.completed %} checked {% endif %} /> 
+                {{d.description}}
+                <button class="delete-button" data-id="{{d.id}}"> &Cross;</button>
                 </li>
                 {% endfor %}
-
             </ul>
-
         </div>
 
-       <script>
+        <script>
            const checkboxes = document.querySelectorAll('.check-completed');
            for (let i = 0; i < checkboxes.length; i++) {
                const checkbox = checkboxes[i];
@@ -118,12 +130,19 @@
                 }
             }
 
-           document.getElementById('form').onsubmit = function(e){
+            // work on to get the description
+            // const descInput = document.getElementById('description');
+
+            const descInput = document.getElementById('description')
+            document.getElementById('form').onsubmit = function(e){
                e.preventDefault();
+               const desc = descInput.value;
+            //    desInput.value = '';
                fetch('/todos/create',{
-                   method:'POST',
-                   body: JSON.stringify({
-                       'description': document.getElementById('description').value
+                    method:'POST',
+                    body: JSON.stringify({
+                       'description': desc,
+                       'list_id': {{active_list.id}}
                     }),
                     headers: {
                         'Content-Type':'application/json'
@@ -135,16 +154,36 @@
                    .then(function(jsonResponse){
                        console.log(jsonResponse);
                        const liItem = document.createElement('LI');
-                       liItem.innerHTML = jsonResponse['description'];
-                       document.getElementById('todos').appendChild(liItem);
+                    // liItem.innerHTML = jsonResponse['description'];
 
-                    //    var checkbox = document.createElement('LI');
-                    //    checkbox.type = "checkbox";
-                    //    checkbox.value = jsonResponse['completed'];
-                    //    checkbox.id = jsonResponse['id'];
-                    //    document.getElementById('todos').appendChild(checkbox);
+                    // append description   
+                    // document.getElementById('todos').appendChild(liItem);
 
-                       document.getElementById('error').className = 'hidden';
+                    // append checkbox
+                       const checkbox = document.createElement('input');
+                       checkbox.className = 'check-completed'
+                       checkbox.type = "checkbox";
+                       checkbox.setAttribute('data-id',jsonResponse.id);
+                       liItem.appendChild(checkbox);
+
+                    // append text?
+                    // yes, this follows the order: "checkbox" "description" "delete"
+                       const text = document.createTextNode(' ' + jsonResponse.description);
+                       liItem.appendChild(text);
+
+                    // append deleteBtn
+                       const deleteBtn = document.createElement('button');
+                       deleteBtn.className = 'delete-button';
+                       deleteBtn.setAttribute('data-id', jsonResponse.id);
+                       deleteBtn.innerHTML = '&Cross;';
+                       liItem.appendChild(deleteBtn);
+
+                    // append LI again????
+                    // it is import to keep the item inplace after 'submit'
+
+                       document,getElementById('todos').appendChild(liItem);
+
+                    // document.getElementById('error').className = 'hidden';
 
                    })
                    .then(function(){
@@ -154,7 +193,7 @@
                        document.getElementById('error').className = '';
                    })  
             }
-       </script>
+        </script>
 
     </body>
 </html>
