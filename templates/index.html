@@ -30,15 +30,6 @@
                 /* float:right; */
             }
 
-            /* .lists-wrapper, .todos-wrapper{
-                vertical-align: top;
-                border-style: solid;
-                border-width:thin;
-                border-color: black;
-                margin-left: 10%;
-                padding: 100 px;
-            } */
-
             .layout-left{
                 margin-left: 10%;
                 padding: 100 px;    
@@ -129,18 +120,25 @@
                    .then(function(response){
                        return response.json();
                    })
+                   .catch(function(){
+                       document.getElementById('error').className = '';
+                    })
                    .then(function(jsonResponse){
                        console.log(jsonResponse);
                        const liItem = document.createElement('LI');
+                       // .innerHTML is used to set or returns 
+                          ////  the HTML content (inner HTML) of an element.
                        liItem.innerHTML = jsonResponse['description'];
 
-                    // append description   
+                    // append description
+                        //// if it is deleted, no description shows after 'create'
+                        //// description shows after refreshing the page   
                        document.getElementById('todos').appendChild(liItem);
 
                     // append checkbox
                        const checkbox = document.createElement('input');
-                       checkbox.className = 'check-completed'
-                       checkbox.type = "checkbox";
+                       checkbox.className = "check-completed"
+                       checkbox.type = 'checkbox';
                        checkbox.setAttribute('data-id',jsonResponse.id);
                        liItem.appendChild(checkbox);
 
@@ -151,13 +149,16 @@
 
                     // append deleteBtn
                        const deleteBtn = document.createElement('button');
-                       deleteBtn.className = 'delete-button';
+                       deleteBtn.className = "delete-button";
                        deleteBtn.setAttribute('data-id', jsonResponse.id);
                        deleteBtn.innerHTML = '&Cross;';
                        liItem.appendChild(deleteBtn);
 
-                       document,getElementById('todos').appendChild(liItem);
+                    //    document,getElementById('todos').appendChild(liItem);
                    })
+                   .catch(function(){
+                       document.getElementById('error').className = '';
+                    })
                    .then(function(){
                        document.getElementById('error').className = 'hidden';
                    })
