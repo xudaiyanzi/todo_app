@@ -29,8 +29,24 @@ class Todo(db.Model):
     description = db.Column(db.String(), nullable = False)
     completed = db.Column(db.Boolean, nullable = False, default=False)
 
+    # for the children model using Foreign key
+    ## the foreign key by default is non null, but we can be more specific
+    ## therefore, we are using 'nullable = False'
+    list_id = db.Column(db.Integer, db.ForeignKey('todolists.id'),nullable=False)
+
     def __repr__(self):
         return f'<Todo {self.id}{self.description}>'
+
+## create a parent model
+class TodoList(db.Model):
+    __tablename__ = 'todolists'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), nullable=False)
+
+    completed_list = db.Column(db.Boolean, nullable = False, default=False)
+    ## backref is a custom name
+    todos = db.relationship('Todo', backref='list',lazy=True)
+
 
 db.create_all()
 db.session.commit()
@@ -101,7 +117,37 @@ def deleted_todo(todo_id):
     return jsonify({'success':True})
 
 
+@app.route('/lists/<list_id>')
+def get_list_todos(list_id):
+    ## new redirect?
+    return render_template('index.html',
+    lists=TodoList.query.all(),
+    active_list=TodoList.query.get(list_id),
+    todos=Todo.query.filter_by(list_id=list_id).order_by('id').all()
+    )
+
+@app.route('/lists/<list_id>/set-completed', methods=['POST'])
+def set_completed_list(list_id):
+    try:
+        completed = request.get_json()['completed']
+        print('completed', completed)
+
+        list = TodoList.query.get(list_id)
+        list.completed_list = completed
+
+        for todo in list.todos:
+            todo.completed = completed
+
+        db.session.commit()
+
+    except:
+        db.session.rollback()
+
+    finally:
+        db.session.close()
+    
+    return redirect(url_for('index'))
+
 @app.route('/')
 def index():
-    ## new redirect?
-    return render_template('index.html', data=Todo.query.order_by('id').all())
+    return redirect(url_for('get_list_todos',list_id=1))

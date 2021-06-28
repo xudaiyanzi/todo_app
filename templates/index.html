@@ -13,7 +13,7 @@
                 list-style:none;
                 padding:0;
                 margin:0;
-                width:200px;
+                width:400px;
             }
             li{
                 clear:both;
@@ -34,60 +34,129 @@
                 margin-left: 10%;
                 padding: 100 px;    
             }
+
+            .lists-wrapper, .todos-wrapper {
+                display: inline-block;
+                vertical-align: top;
+            }
         </style>
     </head>
     <body>
 
-        <form id="form">
+        <div class="lists-wrapper">
+            <h4> Types of Todo Lists</h4>
+
+            <form id="form_lists">
                 <div>
-                    <label for="name">Create a to-do item</label>
-                    <input type="text" id="description" name="description"/>
-                    <input type="submit" id="submit" value="Create"/>
+                    <label for="name">Create a todo list</label>
+                    <input type="text" id="description_lists" name="description"/>
+                    <input type="submit" id="submit_lists" value="Create"/>
                 </div>
-        </form>
+             </form>
 
-        <div id = 'error' class = "hidden">Somthing went wrong!</div>
+             <div id = 'error' class = "hidden">Somthing went wrong!</div>
 
-        <h5 class="layout-left"> Current todo list: </h5>
-    
-        <!-- <ul id='todos' class="lists-wrapper"> ul means unordered list -->
-        <ul id='todos' > <!--ul means unordered list-->
-            <!--use jinja to bed non-html info in a html file-->
-            {% for d in data %}
-            <li>
-            <input class="check-completed" data-id="{{d.id}}" type='checkbox' {% if d.completed %} checked {% endif %} /> 
-            {{d.description}}
-            <button class="delete-button" data-id="{{d.id}}"> &Cross;</button>
-            </li>
-            {% endfor %}
-        </ul>
-        <!-- </div> -->
+            <ul id="lists">
+                {% for list in lists %}
+                <li>
+                    <input class="check-completed_lists" data-id="{{list.id}}" type='checkbox' {% if list.completed_list %} checked {% endif %} /> 
+                    <a href='/lists/{{list.id}}'>
+                        {{list.name}}
+                    </a>
+                    <button class="delete-button_lists" data-id="{{list.id}}"> &Cross;</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="todos-wrapper">
+            <h4> Todo Items in TodoList 
+                "{{active_list.name}}"
+            </h4>
+
+            <form id="form">
+                    <div>
+                        <label for="name">Create a todo item</label>
+                        <input type="text" id="description_todo" name="description"/>
+                        <input type="submit" id="submit_todo" value="Create"/>
+                    </div>
+            </form>
+
+            <div id = 'error' class = "hidden">Somthing went wrong!</div>
+        
+            <!-- <ul id='todos' class="lists-wrapper"> ul means unordered list -->
+            
+            <ul id='todos' > <!--ul means unordered list-->
+                <!--use jinja to bed non-html info in a html file-->
+                {% for todo in todos %}
+                <li>
+                <input class="check-completed_todo" data-id="{{todo.id}}" type='checkbox' {% if todo.completed %} checked {% endif %} /> 
+                {{todo.description}}
+                <button class="delete-button_todo" data-id="{{todo.id}}"> &Cross;</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
 
         <script>
-           const checkboxes = document.querySelectorAll('.check-completed');
-           for (let i = 0; i < checkboxes.length; i++) {
-               const checkbox = checkboxes[i];
-               checkbox.onchange =  function(e) {
+           const checkboxes_todo = document.querySelectorAll('.check-completed_todo');
+           for (let i = 0; i < checkboxes_todo.length; i++) {
+               const checkbox_todo = checkboxes_todo[i];
+
+               checkbox_todo.onchange =  function(e) {
                    console.log('event', e);
+
                    const newCompleted = e.target.checked;
                    const todoId = e.target.dataset['id'];
+
                    fetch('/todos/' + todoId + '/set-completed', {
-                       method: 'POST',
-                       body: JSON.stringify({
-                           'completed': newCompleted
-                       }),
-                       headers:{
-                           'Content-Type':'application/json'
-                       }
+                        method: 'POST',
+                        body: JSON.stringify({
+                            'completed': newCompleted
+                        }),
+                        headers:{
+                            'Content-Type':'application/json'
+                        }
                     })
                     .then(function(){
-                       document.getElementById('error').className = 'hidden';
+                        document.getElementById('error').className = 'hidden';
                     })
                     .catch(function(){
-                    document.getElementById('error').className = '';
+                        document.getElementById('error').className = '';
                     })
                 }
            }
+            
+           const checkboxes_list = document.querySelectorAll('.check-completed_lists');
+           for (let i = 0; i < checkboxes_list.length; i++) {
+               const checkbox_list = checkboxes_list[i];
+               checkbox_list.onchange =  function(e) {
+                   console.log('event', e);
+
+                   const listId = e.target.dataset['id'];
+                   const newCompleted = e.target.checked;
+
+                   fetch('/lists/' + listId + '/set-completed', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            'completed': newCompleted
+                        }),
+                        headers:{
+                            'Content-Type':'application/json'
+                        }
+                    })
+                    .then(function(){
+                        window.location.reload(true);
+                    })
+                    .then(function(){
+                        document.getElementById('error').className = 'hidden';
+                    })
+                    .catch(function(){
+                        document.getElementById('error').className = '';
+                    })
+                }
+            }
+
 
            const deleteCrosses = document.querySelectorAll('.delete-button');
            for (let i = 0; i < deleteCrosses.length; i++) {
