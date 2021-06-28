@@ -74,8 +74,9 @@
                 "{{active_list.name}}"
             </h4>
 
-            <form id="form">
+            <form id="form_todo">
                     <div>
+                        <input id="list_id" type="hidden" value="{{active_list.id}}">
                         <label for="name">Create a todo item</label>
                         <input type="text" id="description_todo" name="description"/>
                         <input type="submit" id="submit_todo" value="Create"/>
@@ -158,13 +159,13 @@
             }
 
 
-           const deleteCrosses = document.querySelectorAll('.delete-button');
-           for (let i = 0; i < deleteCrosses.length; i++) {
-               const deleteCross = deleteCrosses[i];
-               deleteCross.onclick =  function(e) {
+           const deleteCrosses_todo = document.querySelectorAll('.delete-button_todo');
+           for (let i = 0; i < deleteCrosses_todo.length; i++) {
+               const deleteCross_todo = deleteCrosses_todo[i];
+               deleteCross_todo.onclick =  function(e) {
                    console.log('event', e);
                    const todoId = e.target.dataset['id'];
-                   fetch('/todos/' + todoId, {
+                   fetch('/todos/' + todoId + '/delete', {
                     method: 'DELETE',
                    })
                    .then(function(){
@@ -175,13 +176,72 @@
                 }
             }
 
+           const deleteCrosses_list = document.querySelectorAll('.delete-button_lists');
+           for (let i = 0; i < deleteCrosses_list.length; i++) {
+               const deleteCross_list = deleteCrosses_list[i];
+               deleteCross_list.onclick =  function(e) {
+                   console.log('event', e);
+                   const listId = e.target.dataset.id;
+
+                   fetch('/lists/'+listId+'/delete', {
+                    method: 'DELETE'
+                   })
+                   .then(function(){
+                       console.log('parent?', e.target);
+                       const item=e.target.parentElement;
+                       item.remove;
+                       document.getElementById("error").className = "hidden";
+                       window.location.reload(true);
+                   })
+                   .catch(function(){
+                       console.error(e);
+                       document.getElementById('error').className = '';
+                   })
+                }
+            }
+
             // work on to get the description
-            document.getElementById('form').onsubmit = function(e){
+            document.getElementById('form_todo').onsubmit = function(e){
                e.preventDefault();
                fetch('/todos/create',{
                     method:'POST',
                     body: JSON.stringify({
-                       'description': document.getElementById('description').value
+                       'description': document.getElementById('description_todo').value,
+                       'list_id':document.getElementById('list_id').value
+                    }),
+                    headers: {
+                        'Content-Type':'application/json'
+                    }
+                   })
+                   .then(function(response){
+                       return response.json();
+                   })
+                   .catch(function(){
+                       document.getElementById('error').className = '';
+                    })
+                   .then(function(jsonResponse){
+                       console.log(jsonResponse);
+                       window.location.reload(true);
+                   })
+                   .catch(function(){
+                       document.getElementById('error').className = '';
+                    })
+                   .then(function(){
+                       document.getElementById('error').className = 'hidden';
+                   })
+                   .catch(function(){
+                       document.getElementById('error').className = '';
+                   })  
+            }
+
+
+            // work on to get the description
+            document.getElementById('form_lists').onsubmit = function(e){
+               e.preventDefault();
+               fetch('/lists/create',{
+                    method:'POST',
+                    body: JSON.stringify({
+                       'name': document.getElementById('description_lists').value,
                     }),
                     headers: {
                         'Content-Type':'application/json'

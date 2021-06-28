@@ -64,12 +64,15 @@ def create_todo():
     try:
         # use the request to get the data from html
         description = request.get_json()['description']
-        todo = Todo(description=description)
+        list_id = request.get_json()['list_id']
+        todo = Todo(description=description, completed=False, list_id=list_id)
 
         db.session.add(todo)
         db.session.commit()
         # add body here
         body['description'] = todo.description
+        body['id'] = todo.id
+        body['completed'] = todo.completed
 
     except:
         db.session.rollback()
@@ -102,7 +105,7 @@ def set_completed_todo(todo_id):
     
     return redirect(url_for('index'))
 
-@app.route('/todos/<todo_id>', methods=['DELETE'])
+@app.route('/todos/<todo_id>/delete', methods=['DELETE'])
 def deleted_todo(todo_id):
     try:
         Todo.query.filter_by(id=todo_id).delete()
@@ -126,6 +129,40 @@ def get_list_todos(list_id):
     todos=Todo.query.filter_by(list_id=list_id).order_by('id').all()
     )
 
+# create a route that listen to the html todo_create
+@app.route('/lists/create', methods=['POST'])
+def create_list():
+    # start with no error
+    error = False
+    # set jsonfiy object in a body
+    body = {}
+    # use try-except-close to control the session controller
+    ## this could help handle errors
+    try:
+        # use the request to get the data from html
+        name = request.get_json()['name']
+        todolist = TodoList(name=name)
+        
+        db.session.add(todolist)
+        db.session.commit()
+        # add body here
+        body['name'] = todolist.name
+        body['id'] = todolist.id
+
+    except:
+        db.session.rollback()
+        error=True
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    
+    if error:
+        abort(400)
+    else:
+        # do not access "todo" after a session close
+        # instead use a body to store "todo" value
+        return jsonify(body)
+
 @app.route('/lists/<list_id>/set-completed', methods=['POST'])
 def set_completed_list(list_id):
     try:
@@ -147,6 +184,29 @@ def set_completed_list(list_id):
         db.session.close()
     
     return redirect(url_for('index'))
+
+@app.route('/lists/<list_id>/delete', methods=['DELETE'])
+def deleted_list(list_id):
+    try:
+        list = TodoList.query.get(list_id)
+
+        for todo in list.todos:
+            db.session.delete(todo)
+
+        db.session.delete(list)
+        db.session.commit()
+
+    except:
+        db.session.rollback()
+        error = True
+
+    finally:
+        db.session.close()
+
+    if error:
+        abort(500)
+    else:
+        return jsonify({'success':True})
 
 @app.route('/')
 def index():
